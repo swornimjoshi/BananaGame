@@ -1,81 +1,69 @@
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { useMemo } from 'react';
+import { Clock, Zap } from 'lucide-react';
 
+/**
+ * Chunky Horizontal Timer Bar
+ * Features:
+ * - Thick progress bar with green (>50%), amber (20-50%), red (<20%) zones
+ * - Under 5s: Text & icon urgency cue ("⚡ 4s left!"), gentle scale pulse only (no rotate shake)
+ * - Accessible: aria-valuenow, aria-valuemin, aria-valuemax, aria-live
+ */
 const Timer = ({ timeLeft, totalTime = 30, isPractice = false }) => {
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  const progress = isPractice ? 1 : Math.max(0, Math.min(1, timeLeft / (totalTime || 30)));
-  const dashoffset = circumference * (1 - progress);
+  const percentage = isPractice
+    ? 100
+    : Math.max(0, Math.min(100, (timeLeft / (totalTime || 30)) * 100));
 
-  const color = useMemo(() => {
-    if (isPractice) return '#3b82f6'; // Clean soothing blue for practice
-    if (timeLeft > 15) return '#22c55e';
-    if (timeLeft > 7) return '#f59e0b';
-    return '#ef4444';
-  }, [timeLeft, isPractice]);
+  // Determine color zone & label
+  const { colorClass, zoneName } = useMemo(() => {
+    if (isPractice) return { colorClass: 'timer-zone-practice', zoneName: 'Practice' };
+    if (timeLeft > (totalTime * 0.5)) return { colorClass: 'timer-zone-green', zoneName: 'Safe' };
+    if (timeLeft > (totalTime * 0.2)) return { colorClass: 'timer-zone-amber', zoneName: 'Hurry' };
+    return { colorClass: 'timer-zone-red', zoneName: 'Critical' };
+  }, [timeLeft, totalTime, isPractice]);
 
   const urgent = !isPractice && timeLeft <= 5 && timeLeft > 0;
 
   return (
-    <motion.div
-      className={`timer-wrapper ${urgent ? 'timer-urgent-pulse' : ''}`}
-      animate={urgent ? { scale: [1, 1.15, 1], rotate: [-2, 2, -2, 0] } : { scale: 1 }}
-      transition={urgent ? { repeat: Infinity, duration: 0.45, ease: 'easeInOut' } : {}}
+    <div
+      className="timer-container"
+      role="timer"
+      aria-live={urgent ? 'assertive' : 'off'}
+      aria-label={`Time remaining: ${timeLeft} seconds`}
+      aria-valuenow={timeLeft}
+      aria-valuemin={0}
+      aria-valuemax={totalTime}
     >
-      <svg width="100" height="100" viewBox="0 0 100 100" className="timer-svg">
-        {/* Track */}
-        <circle
-          cx="50" cy="50" r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth="7"
-        />
-        {/* Glow filter */}
-        <defs>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        {/* Progress arc */}
-        <circle
-          cx="50" cy="50" r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="7"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={dashoffset}
-          transform="rotate(-90 50 50)"
-          filter="url(#glow)"
-          style={{ transition: 'stroke-dashoffset 0.9s linear, stroke 0.4s ease' }}
-        />
-        {/* Time text */}
-        <text
-          x="50" y="46"
-          textAnchor="middle"
-          fill={color}
-          fontSize="22"
-          fontWeight="700"
-          fontFamily="Outfit, sans-serif"
-          style={{ transition: 'fill 0.4s ease' }}
+      <div className="timer-header-info">
+        <div className="timer-label-wrap">
+          <Clock size={16} className="timer-icon" />
+          <span className="timer-caption">
+            {isPractice ? 'Elapsed Practice Time' : 'Time Remaining'}
+          </span>
+        </div>
+
+        {/* Numeric time pill with gentle pulse under 5s */}
+        <motion.div
+          className={`timer-digits-badge ${colorClass} ${urgent ? 'timer-urgent-pill' : ''}`}
+          animate={urgent ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+          transition={urgent ? { repeat: Infinity, duration: 0.6, ease: 'easeInOut' } : {}}
         >
-          {timeLeft}
-        </text>
-        <text
-          x="50" y="62"
-          textAnchor="middle"
-          fill="rgba(255,255,255,0.4)"
-          fontSize="9"
-          fontFamily="Outfit, sans-serif"
-        >
-          SEC
-        </text>
-      </svg>
-    </motion.div>
+          {urgent && <Zap size={14} className="timer-flash-icon" />}
+          <span className="timer-seconds-num">{timeLeft}s</span>
+          {urgent && <span className="timer-urgent-text">HURRY!</span>}
+        </motion.div>
+      </div>
+
+      {/* Chunky 3D Progress Bar Track */}
+      <div className="timer-track-bar">
+        <motion.div
+          className={`timer-progress-fill ${colorClass}`}
+          initial={false}
+          animate={{ width: `${percentage}%` }}
+          transition={{ duration: 0.8, ease: 'linear' }}
+        />
+      </div>
+    </div>
   );
 };
 

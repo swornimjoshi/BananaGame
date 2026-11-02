@@ -1,33 +1,64 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { Eye, EyeOff, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Mascot from '../components/Mascot';
+import Button from '../components/Button';
 
 const Register = () => {
   const { register, user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: '', email: '', password: '', displayName: '', avatar: '🍌' });
+  const [form, setForm] = useState({
+    username: '',
+    email: '',
+    password: '',
+    displayName: '',
+    avatar: '🍌'
+  });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [avatars, setAvatars] = useState(['🍌', '🐒', '🦍', '🌴', '🦁', '🐯', '🦊', '🐸', '🐧', '🦄', '🎮', '🏆', '⭐', '🔥', '💎']);
-  const [step, setStep] = useState(1); // 2-step form
+  const [avatars, setAvatars] = useState([
+    '🍌', '🐒', '🦍', '🌴', '🦁', '🐯', '🦊', '🐸', '🐧', '🦄', '🎮', '🏆', '⭐', '🔥', '💎'
+  ]);
 
-  if (user) { navigate('/game', { replace: true }); return null; }
+  if (user) {
+    navigate('/game', { replace: true });
+    return null;
+  }
 
   useEffect(() => {
-    api.get('/profile/avatars').then(({ data }) => setAvatars(data.avatars)).catch(() => {});
+    api.get('/profile/avatars')
+      .then(({ data }) => setAvatars(data.avatars))
+      .catch(() => {});
   }, []);
+
+  // Compute password strength score (0-4)
+  const getPasswordStrength = (pwd) => {
+    if (!pwd) return { score: 0, label: 'None', color: 'var(--color-border-light)' };
+    let s = 0;
+    if (pwd.length >= 8) s += 1;
+    if (pwd.length >= 12) s += 1;
+    if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) s += 1;
+    if (/[0-9]/.test(pwd) || /[^A-Za-z0-9]/.test(pwd)) s += 1;
+
+    if (s <= 1) return { score: 25, label: 'Weak', color: 'var(--color-wrong)' };
+    if (s === 2) return { score: 50, label: 'Fair', color: 'var(--color-streak)' };
+    if (s === 3) return { score: 75, label: 'Good', color: 'var(--color-primary)' };
+    return { score: 100, label: 'Strong 💪', color: 'var(--color-correct)' };
+  };
+
+  const strength = getPasswordStrength(form.password);
 
   const validate = () => {
     const e = {};
     if (!form.username || form.username.length < 3) e.username = 'Username must be 3–20 characters';
-    if (!/^[a-zA-Z0-9_]+$/.test(form.username)) e.username = 'Letters, numbers, underscore only';
+    if (!/^[a-zA-Z0-9_]+$/.test(form.username)) e.username = 'Letters, numbers, and underscores only';
     if (!form.email || !/\S+@\S+\.\S+/.test(form.email)) e.email = 'Valid email required';
-    if (!form.password || form.password.length < 8) e.password = 'At least 8 characters';
+    if (!form.password || form.password.length < 8) e.password = 'Password must be at least 8 characters';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -38,7 +69,7 @@ const Register = () => {
     setLoading(true);
     try {
       await register(form);
-      toast.success('Welcome to Banana Math! 🍌🎉');
+      toast.success('Welcome to Monkey Genius Lab! 🍌🎉');
       navigate('/game');
     } catch (err) {
       const apiErrors = err.response?.data?.errors;
@@ -59,48 +90,42 @@ const Register = () => {
   return (
     <motion.div
       className="auth-page"
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 25 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.4 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.35 }}
     >
       <div className="auth-card glass-card" style={{ maxWidth: '480px' }}>
+        {/* Playful Header with Mascot */}
         <div className="auth-header">
-          <motion.div
-            className="auth-logo"
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-          >
-            {form.avatar}
-          </motion.div>
-          <h1 className="auth-title">Create Account</h1>
-          <p className="auth-subtitle">Pick an avatar and join the leaderboard</p>
+          <Mascot state="crowned" size={90} className="auth-mascot" />
+          <h1 className="auth-title">Join the Lab!</h1>
+          <p className="auth-subtitle">Pick an avatar and join the global chalkboard ranks</p>
         </div>
 
-        {/* Avatar selector */}
+        {/* Avatar Selector */}
         <div className="avatar-picker">
-          <p className="avatar-label">Choose Your Avatar</p>
-          <div className="avatar-grid">
+          <p className="avatar-label">Choose Your Scientist Avatar</p>
+          <div className="avatar-grid" role="group" aria-label="Avatar options">
             {avatars.map((av) => (
-              <motion.button
+              <button
                 key={av}
                 type="button"
                 className={`avatar-btn ${form.avatar === av ? 'selected' : ''}`}
                 onClick={() => setForm((p) => ({ ...p, avatar: av }))}
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 0.9 }}
+                aria-label={`Select avatar ${av}`}
               >
                 {av}
-              </motion.button>
+              </button>
             ))}
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form" noValidate>
           {errors.general && (
-            <motion.div className="form-error-banner" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="form-error-banner" role="alert">
               {errors.general}
-            </motion.div>
+            </div>
           )}
 
           <div className="form-row">
@@ -110,7 +135,7 @@ const Register = () => {
                 id="reg-username"
                 type="text"
                 className={`form-input ${errors.username ? 'input-error' : ''}`}
-                placeholder="coolplayer99"
+                placeholder="banana_genius"
                 value={form.username}
                 maxLength={20}
                 onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
@@ -118,13 +143,16 @@ const Register = () => {
               />
               {errors.username && <span className="field-error">{errors.username}</span>}
             </div>
+
             <div className="form-group">
-              <label htmlFor="reg-display" className="form-label">Display Name <span className="optional">(optional)</span></label>
+              <label htmlFor="reg-display" className="form-label">
+                Display Name <span className="optional">(optional)</span>
+              </label>
               <input
                 id="reg-display"
                 type="text"
                 className="form-input"
-                placeholder="Cool Player"
+                placeholder="Dr. Banana"
                 value={form.displayName}
                 maxLength={50}
                 onChange={(e) => setForm((p) => ({ ...p, displayName: e.target.value }))}
@@ -133,12 +161,12 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="reg-email" className="form-label">Email</label>
+            <label htmlFor="reg-email" className="form-label">Email Address</label>
             <input
               id="reg-email"
               type="email"
               className={`form-input ${errors.email ? 'input-error' : ''}`}
-              placeholder="you@example.com"
+              placeholder="you@lab.org"
               value={form.email}
               onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
               autoComplete="email"
@@ -158,41 +186,68 @@ const Register = () => {
                 onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
                 autoComplete="new-password"
               />
-              <button type="button" className="input-icon-btn" onClick={() => setShowPw((v) => !v)} tabIndex={-1}>
-                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+              <button
+                type="button"
+                className="input-icon-btn"
+                onClick={() => setShowPw((v) => !v)}
+                tabIndex={-1}
+                aria-label={showPw ? 'Hide password' : 'Show password'}
+              >
+                {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
             {errors.password && <span className="field-error">{errors.password}</span>}
+
+            {/* Password strength meter */}
             {form.password && (
-              <div className="pw-strength">
-                <div
-                  className="pw-bar"
-                  style={{
-                    width: `${Math.min(100, form.password.length * 8)}%`,
-                    background: form.password.length >= 12 ? 'var(--color-green)'
-                      : form.password.length >= 8 ? 'var(--color-banana)'
-                      : 'var(--color-red)',
-                  }}
-                />
+              <div className="pw-strength-container" aria-live="polite">
+                <div className="pw-strength">
+                  <div
+                    className="pw-bar"
+                    style={{
+                      width: `${strength.score}%`,
+                      background: strength.color,
+                    }}
+                  />
+                </div>
+                <div className="pw-strength-label" style={{ color: strength.color }}>
+                  Strength: {strength.label}
+                </div>
               </div>
             )}
           </div>
 
-          <motion.button
+          <Button
             id="register-submit"
             type="submit"
-            className="btn btn-primary btn-full"
+            variant="primary"
+            size="lg"
             disabled={loading}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            icon={<UserPlus size={18} />}
+            className="btn-full"
+            style={{ marginTop: '0.5rem' }}
           >
-            {loading ? <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>🍌</motion.span>
-              : <><UserPlus size={18} /> Create Account</>}
-          </motion.button>
+            {loading ? 'Creating Lab Record...' : 'Create Scientist Account'}
+          </Button>
         </form>
 
+        {/* Continue as guest option */}
+        <div className="auth-guest-divider">
+          <span>or try without an account</span>
+        </div>
+
+        <Button
+          to="/game"
+          variant="secondary"
+          size="md"
+          className="btn-full"
+          icon={<ArrowRight size={16} />}
+        >
+          Continue as Guest
+        </Button>
+
         <p className="auth-switch">
-          Already have an account?{' '}
+          Already registered in the lab?{' '}
           <Link to="/login" className="auth-link">Sign in</Link>
         </p>
       </div>

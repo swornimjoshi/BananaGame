@@ -1,18 +1,57 @@
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Gamepad2, Trophy, Zap, Shield, Lightbulb } from 'lucide-react';
-
-const floatingBananas = ['🍌', '🍌', '🐒', '🍌', '🌴', '🍌', '⭐', '🍌'];
+import { Gamepad2, Trophy, Zap, Lightbulb, Flame, ArrowRight, CheckCircle2 } from 'lucide-react';
+import Mascot from '../components/Mascot';
+import Button from '../components/Button';
+import { playClickSound } from '../utils/audio';
 
 const Home = () => {
   const { user } = useAuth();
 
+  // Interactive Demo Card State
+  const [demoDigit, setDemoDigit] = useState(null);
+  const [demoReaction, setDemoReaction] = useState('idle');
+  const [demoFeedback, setDemoFeedback] = useState('Tap a digit below to solve the equation: 🍌 + 🍌 = ?');
+
+  const handleDemoTap = (n) => {
+    playClickSound();
+    setDemoDigit(n);
+    if (n === 8) {
+      setDemoReaction('cheering');
+      setDemoFeedback('🎉 Correct! 4 + 4 = 8. Professor Chimpy is impressed!');
+    } else {
+      setDemoReaction('headshake');
+      setDemoFeedback(`🤔 Not quite ${n}! Remember: each bunch has 4 bananas.`);
+    }
+  };
+
   const features = [
-    { icon: <Zap size={28} />, title: 'Speed Bonus', desc: 'Answer faster to earn extra points on top of your base score.' },
-    { icon: '🔥', title: 'Streak Multiplier', desc: 'Chain correct answers for up to 3× multiplier on your score.' },
-    { icon: <Lightbulb size={28} />, title: '3-Step Hint System', desc: 'Progressive clues from number parity to a 50/50 final showdown.' },
-    { icon: <Trophy size={28} />, title: 'Live Leaderboard', desc: 'Compete globally with daily, weekly, and all-time rankings.' },
+    {
+      icon: <Zap size={28} />,
+      title: 'Speed Bonus',
+      color: 'var(--color-streak)',
+      desc: 'Answer in the first 5 seconds to bank up to +50 speed bonus points on every puzzle.',
+    },
+    {
+      icon: <Flame size={28} />,
+      title: 'Streak Multiplier',
+      color: 'var(--color-primary)',
+      desc: 'Chain consecutive correct answers for a compounding 1.5×, 2×, up to 3× multiplier.',
+    },
+    {
+      icon: <Lightbulb size={28} />,
+      title: '3-Step Hint Lab',
+      color: 'var(--color-info)',
+      desc: 'Stuck on an equation? Get parity clues, eliminate 4 wrong digits, or trigger a 50/50 duel.',
+    },
+    {
+      icon: <Trophy size={28} />,
+      title: 'Live Global Ranks',
+      color: 'var(--color-bonus)',
+      desc: 'Climb daily, weekly, and all-time leaderboards. Claim the #1 golden lab crown.',
+    },
   ];
 
   return (
@@ -21,128 +60,120 @@ const Home = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.3 }}
     >
-      {/* Floating banana decorations */}
-      <div className="floating-bg" aria-hidden="true">
-        {floatingBananas.map((emoji, i) => (
-          <motion.span
-            key={i}
-            className="floating-emoji"
-            style={{ left: `${10 + i * 12}%`, animationDelay: `${i * 0.7}s`, fontSize: `${1.2 + (i % 3) * 0.5}rem` }}
-            animate={{ y: [-20, 20, -20], rotate: [-10, 10, -10] }}
-            transition={{ repeat: Infinity, duration: 4 + i, ease: 'easeInOut', delay: i * 0.5 }}
-          >
-            {emoji}
-          </motion.span>
-        ))}
-      </div>
-
-      {/* Hero */}
-      <section className="hero-section">
+      {/* ── 1. Hero Section ────────────────────────────────────────── */}
+      <section className="hero-section" aria-label="Introduction">
         <motion.div
           className="hero-content"
-          initial={{ y: 40, opacity: 0 }}
+          initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1, duration: 0.6 }}
+          transition={{ duration: 0.5 }}
         >
-          <motion.div
-            className="hero-badge"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3, type: 'spring', stiffness: 300 }}
-          >
-            🍌 Banana Math Challenge
-          </motion.div>
+          <div className="hero-badge">
+            <span role="img" aria-hidden="true">🔬</span>
+            <span>Welcome to Monkey Genius Lab</span>
+          </div>
 
           <h1 className="hero-title">
             Solve the Puzzle.<br />
-            <span className="gradient-text">Climb the Ranks.</span>
+            <span className="gradient-text">Master Math Logic.</span>
           </h1>
 
           <p className="hero-subtitle">
-            Find the missing digit hidden in each banana puzzle. Race against the clock,
-            build streaks, and dominate the global leaderboard.
+            Find the missing digit (0–9) hidden inside the banana equation.
+            Race against Professor Chimpy's chalkboard timer, build unstoppable streaks,
+            and dominate the global leaderboard!
           </p>
 
+          {/* Primary CTA Above the Fold */}
           <div className="hero-cta">
-            {user ? (
-              <Link to="/game" className="btn btn-primary btn-lg">
-                <Gamepad2 size={20} /> Play Now
-              </Link>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  state={{ from: '/game', message: 'Please log in to play Banana Math Game! 🍌' }}
-                  className="btn btn-primary btn-lg"
-                >
-                  <Gamepad2 size={20} /> Play Now (Login Required)
-                </Link>
-                <Link to="/register" className="btn btn-ghost btn-lg">
-                  Create Account
-                </Link>
-              </>
+            <Button
+              to="/game"
+              variant="primary"
+              size="lg"
+              icon={<Gamepad2 size={22} />}
+            >
+              Play Now (Free)
+            </Button>
+
+            {!user && (
+              <Button
+                to="/register"
+                variant="ghost"
+                size="lg"
+              >
+                Sign Up to Save Score
+              </Button>
             )}
           </div>
+
+          <p className="hero-guest-hint">
+            🌱 <strong>Guests can play immediately!</strong> Log in anytime to save your score and unlock leaderboard ranks.
+          </p>
         </motion.div>
 
-        {/* Demo card */}
+        {/* ── 2. Interactive Demo Card ──────────────────────────────── */}
         <motion.div
           className="hero-demo"
-          initial={{ x: 60, opacity: 0 }}
+          initial={{ x: 40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.7 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
         >
           <div className="demo-card glass-card">
             <div className="demo-header">
-              <span className="demo-label">Banana Puzzle</span>
+              <span className="demo-label">Interactive Demo Lab</span>
               <span className="demo-timer">⏱ 28s</span>
             </div>
+
+            {/* Chalkboard Card in Demo */}
             <div className="demo-image-wrap">
+              <div className="demo-mascot-row">
+                <Mascot state={demoReaction} size={70} />
+              </div>
               <div className="demo-image-placeholder">
-                <span style={{ fontSize: '2.5rem' }}>🍌 + 🍌 = 10</span>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '8px' }}>
-                  Solve the equation & find the missing digit!
-                </p>
-                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--color-banana)' }}>
-                  🍌 Powered by Marc Conrad's Banana API
-                </div>
+                <p className="demo-equation">🍌 + 🍌 = <span className="demo-target">{demoDigit !== null ? demoDigit : '?'}</span></p>
+                <p className="demo-chalk-sub">(Each bunch = 4 bananas)</p>
               </div>
             </div>
-            <div className="demo-pad">
-              {[1,2,3,4,5,6,7,8,9,0].map(n => (
-                <div key={n} className="demo-num">{n}</div>
+
+            <p className="demo-feedback-text" aria-live="polite">
+              {demoFeedback}
+            </p>
+
+            {/* Interactive Number Keys */}
+            <div className="demo-pad" role="group" aria-label="Demo number keypad">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={`demo-num ${demoDigit === n ? 'demo-num-selected' : ''}`}
+                  onClick={() => handleDemoTap(n)}
+                  aria-label={`Test digit ${n}`}
+                >
+                  {n}
+                </button>
               ))}
             </div>
           </div>
         </motion.div>
       </section>
 
-      {/* Features */}
-      <section className="features-section">
-        <motion.h2
-          className="section-title"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          Why Play Banana Math?
-        </motion.h2>
+      {/* ── 3. Four Feature Cards ──────────────────────────────────── */}
+      <section className="features-section" aria-label="Game Features">
+        <h2 className="section-title">Why Students & Gamers Love It</h2>
         <div className="features-grid">
           {features.map((f, i) => (
             <motion.div
-              key={i}
+              key={f.title}
               className="feature-card glass-card"
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 25 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1, duration: 0.5 }}
-              whileHover={{ y: -5, boxShadow: '0 8px 32px rgba(247,201,72,0.15)' }}
+              transition={{ delay: i * 0.1, duration: 0.4 }}
             >
-              <div className="feature-icon">
-                {typeof f.icon === 'string' ? <span style={{ fontSize: '1.8rem' }}>{f.icon}</span> : f.icon}
+              <div className="feature-icon" style={{ color: f.color }}>
+                {f.icon}
               </div>
               <h3 className="feature-title">{f.title}</h3>
               <p className="feature-desc">{f.desc}</p>
@@ -151,51 +182,61 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Scoring explainer */}
-      <section className="scoring-section">
-        <motion.div
-          className="scoring-card glass-card"
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="section-title" style={{ marginBottom: '1.5rem' }}>Scoring System</h2>
+      {/* ── 4. Scoring Explainer Card ──────────────────────────────── */}
+      <section className="scoring-section" aria-label="Scoring Mechanics">
+        <div className="scoring-card glass-card">
+          <h2 className="section-title" style={{ marginBottom: '1rem' }}>
+            Fair & Transparent Scoring System
+          </h2>
+          <p style={{ color: 'var(--color-text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
+            Every correct equation rewards your calculation speed and continuous accuracy.
+          </p>
+
           <div className="scoring-grid">
             <div className="score-item">
-              <span className="score-label">Base Score</span>
+              <span className="score-label">Base Points</span>
               <span className="score-value banana-text">100 pts</span>
+              <span className="score-subtext">For any correct digit</span>
             </div>
             <div className="score-item">
               <span className="score-label">Speed Bonus</span>
-              <span className="score-value" style={{ color: 'var(--color-orange)' }}>+50 pts</span>
+              <span className="score-value" style={{ color: 'var(--color-streak)' }}>+50 pts</span>
+              <span className="score-subtext">Under 5s rapid solve</span>
             </div>
             <div className="score-item">
-              <span className="score-label">Streak ×3</span>
-              <span className="score-value" style={{ color: 'var(--color-purple)' }}>3× mult</span>
+              <span className="score-label">Streak Multiplier</span>
+              <span className="score-value" style={{ color: 'var(--color-bonus)' }}>Up to 3×</span>
+              <span className="score-subtext">Multiplier on entire score</span>
             </div>
             <div className="score-item">
-              <span className="score-label">Max per Q</span>
-              <span className="score-value" style={{ color: 'var(--color-green)' }}>450 pts</span>
+              <span className="score-label">Max Per Puzzle</span>
+              <span className="score-value" style={{ color: 'var(--color-correct)' }}>450 pts</span>
+              <span className="score-subtext">Speed + 10x streak cap</span>
             </div>
           </div>
-          {!user && (
-            <Link to="/register" className="btn btn-primary" style={{ marginTop: '2rem' }}>
-              Get Started — It's Free
-            </Link>
-          )}
-        </motion.div>
+
+          <div className="scoring-cta-wrap">
+            <Button
+              to="/game"
+              variant="primary"
+              size="lg"
+              icon={<ArrowRight size={20} />}
+            >
+              Start Your First Round
+            </Button>
+          </div>
+        </div>
       </section>
 
-      {/* Footer / Attribution */}
-      <footer style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+      {/* ── 5. Footer & Academic Attribution ───────────────────────── */}
+      <footer className="home-footer" role="contentinfo">
         <p>
-          Game puzzles powered by{' '}
+          🍌 Banana Math Challenge • Puzzles powered by{' '}
           <a
             href="https://marcconrad.com/uob/banana/"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: 'var(--color-banana)', textDecoration: 'underline' }}
+            className="footer-credit-link"
           >
             Marc Conrad's Banana API
           </a>
