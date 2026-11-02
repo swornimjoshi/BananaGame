@@ -6,28 +6,17 @@ import NumberPad from '../components/NumberPad';
 import Timer from '../components/Timer';
 import Mascot from '../components/Mascot';
 import Button from '../components/Button';
+import MatchIntro from '../components/MatchIntro';
+import FloatingPoints from '../components/FloatingPoints';
 import ResultOverlay from '../components/overlays/ResultOverlay';
 import PauseOverlay from '../components/overlays/PauseOverlay';
 import ExpiredOverlay from '../components/overlays/ExpiredOverlay';
 import RoundSummaryOverlay from '../components/overlays/RoundSummaryOverlay';
 import {
   Flame, Star, Trophy, Volume2, VolumeX, Lightbulb,
-  Pause, Maximize2, Minimize2, Heart, Play
+  Pause, Maximize2, Minimize2, Heart, Play, Zap
 } from 'lucide-react';
 import { playClickSound, isSoundEnabled, toggleSound } from '../utils/audio';
-
-// Score Popup on correct answer
-const ScorePopup = ({ amount }) => (
-  <motion.div
-    className="score-popup"
-    initial={{ opacity: 1, y: 0, scale: 0.9 }}
-    animate={{ opacity: 0, y: -50, scale: 1.25 }}
-    transition={{ duration: 0.9, ease: 'easeOut' }}
-    aria-hidden="true"
-  >
-    +{amount}
-  </motion.div>
-);
 
 const Game = () => {
   const { user } = useAuth();
@@ -46,6 +35,7 @@ const Game = () => {
   const [imgLoading, setImgLoading] = useState(true);
   const [imgFailedDirect, setImgFailedDirect] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [showMatchIntro, setShowMatchIntro] = useState(false);
 
   useEffect(() => {
     if (currentSession?.questionUrl) {
@@ -85,6 +75,11 @@ const Game = () => {
     return () => window.removeEventListener('keydown', handler);
   }, [gameState, submitAnswer, eliminatedDigits, pauseGame, resumeGame]);
 
+  const handleStartWithIntro = (mode, diff) => {
+    setShowMatchIntro(true);
+    startNewGame(mode, diff);
+  };
+
   const getMultiplierLabel = () => {
     if (streak >= 10) return '3×';
     if (streak >= 6) return '2×';
@@ -107,6 +102,13 @@ const Game = () => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
     >
+      {/* ── Match Countdown Intro ───────────────────────────────────── */}
+      <AnimatePresence>
+        {showMatchIntro && isPlaying && (
+          <MatchIntro onComplete={() => setShowMatchIntro(false)} />
+        )}
+      </AnimatePresence>
+
       {/* ── 1. Slim Top Bar ────────────────────────────────────────── */}
       <div className="game-stats-bar" role="region" aria-label="Game Status Bar">
         {/* Score Chip */}
@@ -147,8 +149,8 @@ const Game = () => {
               <Heart
                 key={heart}
                 size={16}
-                fill={heart <= lives ? '#FF6B6B' : 'none'}
-                color={heart <= lives ? '#FF6B6B' : 'var(--color-text-muted)'}
+                fill={heart <= lives ? '#EE1515' : 'none'}
+                color={heart <= lives ? '#EE1515' : 'var(--color-text-muted)'}
               />
             ))}
             <span className="stat-label">Lives</span>
@@ -218,9 +220,9 @@ const Game = () => {
               <div className="start-mascot-hero">
                 <Mascot state="cheering" size={120} />
               </div>
-              <h2 className="start-title">Banana Math Challenge</h2>
+              <h2 className="start-title">Banana Math Challenge ⚡</h2>
               <p className="start-desc">
-                Professor Chimpy needs your help! Solve each equation by finding the missing digit (0–9) before time runs out.
+                Pikachu Electric Lab: Find the missing digit (0–9) to balance the equation before the timer runs out!
               </p>
 
               {/* Mode Selector */}
@@ -266,12 +268,12 @@ const Game = () => {
                 </div>
               </div>
 
-              {/* Start Playing CTA */}
+              {/* Start Playing CTA with Arcade Countdown */}
               <Button
                 id="start-game-btn"
                 variant="primary"
                 size="lg"
-                onClick={() => startNewGame()}
+                onClick={() => handleStartWithIntro()}
                 icon={<Play size={20} />}
                 className="btn-full"
                 style={{ marginTop: '1.25rem' }}
@@ -296,7 +298,7 @@ const Game = () => {
             >
               <Mascot state="thinking" size={110} />
               <p style={{ marginTop: '1rem', fontWeight: 700, color: 'var(--color-text)' }}>
-                Professor Chimpy is setting up the blackboard...
+                Charging up the equation on the chalkboard... ⚡
               </p>
             </motion.div>
           )}
@@ -317,7 +319,7 @@ const Game = () => {
               >
                 <div className="question-header-row">
                   <span className="question-hint">
-                    🍏 Chalkboard Lab: What digit balances the equation?
+                    ⚡ Chalkboard Lab: What digit balances the equation?
                   </span>
                   <button
                     type="button"
@@ -392,7 +394,6 @@ const Game = () => {
 
               {/* ── C. Lightbulb Hint Button & Mascot Speech Bubbles ─── */}
               <div className="hints-container">
-                {/* Active Hints Speech Bubbles */}
                 {hints.length > 0 && (
                   <motion.div
                     className="hints-stack"
@@ -416,18 +417,17 @@ const Game = () => {
                   </motion.div>
                 )}
 
-                {/* Hint Button showing point cost beforehand */}
                 <button
                   type="button"
                   className={`btn-hint ${hints.length >= 3 ? 'btn-hint-max' : ''}`}
                   onClick={requestHint}
                   disabled={!isPlaying || isHintLoading || hints.length >= 3}
-                  title={hints.length >= 3 ? 'All 3 hints used' : 'Request hint from Professor Chimpy'}
+                  title={hints.length >= 3 ? 'All 3 hints used' : 'Request hint from Pikachu'}
                 >
                   <Lightbulb size={16} />
                   <span>
                     {isHintLoading
-                      ? 'Consulting Chimpy...'
+                      ? 'Charging up hint...'
                       : hints.length === 0
                       ? 'Hint 1: Type & Range (-15 pts)'
                       : hints.length === 1
@@ -439,10 +439,15 @@ const Game = () => {
                 </button>
               </div>
 
-              {/* Score Popup on Answer */}
+              {/* Dynamic Floating Points Indicator */}
               <AnimatePresence>
                 {lastResult?.scoreEarned > 0 && lastResult?.correct && (
-                  <ScorePopup key={lastResult.scoreEarned + Date.now()} amount={lastResult.scoreEarned} />
+                  <FloatingPoints
+                    key={lastResult.scoreEarned + Date.now()}
+                    points={lastResult.scoreEarned}
+                    combo={streak}
+                    isSpeed={lastResult?.breakdown?.timeBonus > 0}
+                  />
                 )}
               </AnimatePresence>
 
