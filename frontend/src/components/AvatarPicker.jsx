@@ -61,3 +61,4 @@ const AvatarPicker = ({ open, onClose, avatars = [], selectedAvatar, onSelect })
 };
 
 export default AvatarPicker;
+

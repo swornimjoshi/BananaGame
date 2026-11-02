@@ -51,3 +51,4 @@ const PauseOverlay = ({ onResume, onQuit }) => {
 };
 
 export default PauseOverlay;
+

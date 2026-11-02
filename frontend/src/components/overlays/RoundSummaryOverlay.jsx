@@ -52,3 +52,4 @@ const RoundSummaryOverlay = ({ score, puzzleCount, onPlayAgain, onQuit }) => {
 };
 
 export default RoundSummaryOverlay;
+

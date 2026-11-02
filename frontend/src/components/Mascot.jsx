@@ -247,3 +247,4 @@ const Mascot = ({ state = 'idle', size = 100, className = '' }) => {
 };
 
 export default Mascot;
+
